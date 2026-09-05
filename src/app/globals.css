@@ -1,8 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 「善・穏やかさ」をイメージした、やわらかいグリーン×生成り色 */
+  --background: #f3f7f0;
+  --foreground: #2f3b2a;
+  --paper: #fffdf8;
+  --accent: #6fa876;
+  --accent-dark: #4f8a58;
+  --accent-soft: #e6f0e3;
 }
 
 @theme inline {
@@ -20,7 +25,89 @@
 }
 
 body {
-  background: var(--background);
+  /* ふんわりしたグラデーションの背景。エントリーシート用紙が浮かんでいるイメージ */
+  background: linear-gradient(160deg, var(--background) 0%, #eef3ea 100%);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+}
+
+/* Component classes using Tailwind's @apply for simpler JSX */
+@layer components {
+  .container {
+    /* エントリーシートの「用紙」をイメージした、白くて角の丸いカード */
+    @apply p-8 max-w-[900px] mx-auto my-8 bg-[var(--paper)] rounded-3xl shadow-lg border border-[var(--accent-soft)];
+  }
+
+  .title {
+    @apply text-2xl font-bold text-[var(--accent-dark)] tracking-wide;
+  }
+
+  .mode-switch {
+    @apply mt-4 flex gap-3 flex-wrap;
+  }
+
+  .mode-btn {
+    /* 丸みの強い「ピル型」ボタン。アイコンのように優しい印象に */
+    @apply px-5 py-2 rounded-full border border-[var(--accent-soft)] bg-white text-[var(--accent-dark)] text-sm font-medium shadow-sm transition;
+  }
+
+  .mode-btn-active {
+    @apply bg-[var(--accent)] text-white border-[var(--accent)] shadow-md;
+  }
+
+  .cards-grid {
+    @apply mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4;
+  }
+
+  .card {
+    /* 記入欄っぽく、うっすら罫線のある用紙カード */
+    @apply border border-[var(--accent-soft)] rounded-2xl p-4 bg-white shadow-sm;
+  }
+
+  .card-title {
+    @apply font-semibold mb-2 text-[var(--accent-dark)] border-b border-[var(--accent-soft)] pb-1;
+  }
+
+  .textarea {
+    @apply w-full p-2 border border-[var(--accent-soft)] rounded-xl text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[var(--accent)];
+  }
+
+  .actions {
+    @apply mt-5 flex items-center gap-3 flex-wrap;
+  }
+
+  .actions-row {
+    @apply flex items-center gap-3 flex-wrap;
+  }
+
+  .field-label {
+    @apply text-sm text-[var(--accent-dark)] font-medium;
+  }
+
+  .select {
+    /* こちらも角を丸く、優しい印象に */
+    @apply ml-2 border border-[var(--accent-soft)] rounded-full px-4 py-1.5 text-sm bg-white;
+  }
+
+  .btn {
+    /* クリックするボタンは円に近い「ピル型」で、押しやすく丸い印象に */
+    @apply rounded-full px-6 py-2 text-white font-semibold shadow-md transition;
+  }
+
+  .btn-primary {
+    @apply bg-[var(--accent)] hover:bg-[var(--accent-dark)];
+  }
+
+  .feedback-box {
+    @apply mt-5 border border-[var(--accent-soft)] rounded-2xl p-5 bg-[#eaf3e7];
+  }
+
+  .feedback-title {
+    @apply font-semibold mb-2 text-[var(--accent-dark)];
+  }
+
+  .feedback-body {
+    @apply whitespace-pre-wrap text-sm leading-relaxed text-[var(--foreground)];
+  }
 }
