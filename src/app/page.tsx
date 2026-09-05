@@ -24,6 +24,17 @@ export default function Home() {
   const isRecordingRef = useRef(false);
   const smileSamplesRef = useRef<number[]>([]);
 
+  // 笑顔率(数字)を受け取って、絵文字を返す
+  // 三項演算子(条件 ? Aの場合 : Bの場合)を2つ組み合わせて、3段階に出し分けている
+  function smileEmoji(n: number) {
+    return n >= 70 ? "😄" : n >= 40 ? "🙂" : "😐";
+  }
+
+  // 同じ考え方で、文字の色も3段階に出し分ける
+  function smileColor(n: number) {
+    return n >= 70 ? "green" : n >= 40 ? "orange" : "red";
+  }
+
   // FaceMeter から0.5秒ごとに呼ばれる。常に表示用の smileScore を更新しつつ、
   // 録音中であればサンプルとして貯めておく。
   function handleScore(n: number) {
@@ -81,9 +92,9 @@ export default function Home() {
       <h1>AI練習コーチ</h1>
       {/* ③ <h1> の下あたりに置く */}
       <FaceMeter onScore={handleScore} />
-      <p>いまの笑顔率：{smileScore}%</p>
+      <p style={{ color: smileColor(smileScore) }}>いまの笑顔率：{smileScore}% {smileEmoji(smileScore)}</p>
       {recordedSmileAvg !== null && (
-        <p>録音中の平均笑顔率：{recordedSmileAvg}%</p>
+        <p style={{ color: smileColor(recordedSmileAvg) }}>録音中の平均笑顔率：{recordedSmileAvg}% {smileEmoji(recordedSmileAvg)}</p>
       )}
 
       <p>お題：{topic}</p>

@@ -75,7 +75,41 @@ export default function FaceMeter({ onScore }: { onScore: (n: number) => void })
 
     return (
         <div>
-            <video ref={videoRef} autoPlay muted width={320} height={240} />
+            {/*
+              円形の窓（マスク）を作る仕組み：
+              ① 外側の div を「幅と高さが同じ正方形」にして、border-radius: 50% で丸くする
+                 → overflow: hidden をつけることで、丸からはみ出た部分を切り取って隠す
+                 → position: relative にして、中の video の位置の基準にする
+              ② 中の video は「サイズを固定（160×160）」して、position: absolute + 中央寄せで配置する
+                 → こうすることで、外側の丸窓(div)だけを小さくしても、
+                    video 自体の大きさ（＝顔の実際の見え方）は変わらず、
+                    「窓を小さくして覗き見ている」ような見た目になる
+                    （もし video も一緒に縮めると、顔まで一緒に小さくなってしまう）
+            */}
+            <div
+                style={{
+                    width: 110,
+                    height: 110,
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    position: "relative",
+                }}
+            >
+                <video
+                    ref={videoRef}
+                    autoPlay
+                    muted
+                    style={{
+                        width: 160,
+                        height: 160,
+                        objectFit: "cover",
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                    }}
+                />
+            </div>
             <p>😊 笑顔 {smile}%</p>
         </div>
     );
