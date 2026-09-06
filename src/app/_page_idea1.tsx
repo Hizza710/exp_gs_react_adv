@@ -1,40 +1,21 @@
 "use client";
 // src/app/page.tsx
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import Recorder from "./Recorder";
 
-// ─────────────────────────────────────────────
-// 参照用：題は固定文字列で、回答欄は1つ。口調だけ選べるシンプルバージョン
-//
-// const [answer, setAnswer] = useState("");
-// const [tone, setTone] = useState("やさしめ");
-// const topic = "自己紹介を1分で";
-//
-// async function handleSubmit() {
-//   setLoading(true);
-//   setFeedback("");
-//   try {
-//     const res = await fetch("/api/coach", {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({ topic, answer }),
-//     });
-//     const data = await res.json();
-//     setFeedback(data.feedback ?? "エラーが起きました。もう一度お試しください。");
-//   } catch {
-//     setFeedback("通信に失敗しました。ネットワークを確認してください。");
-//   } finally {
-//     setLoading(false);
-//   }
-// }
-// ─────────────────────────────────────────────
+// FaceMeter は内部で face-api（ブラウザ専用ライブラリ）を使うため、
+// サーバー側では読み込まない設定（ssr: false）にする。
+// これにより「サーバーで評価されて壊れる」問題を防げる。
+const FaceMeter = dynamic(() => import("./FaceMeter"), { ssr: false });
 
 export default function Home() {
   const [feedback, setFeedback] = useState("");
   const [loading, setLoading] = useState(false);
   const [tone, setTone] = useState("やさしめ");
 
-  // 工夫#1 現実的 / 理想的 の2モードで、それぞれ4つのトピックを編集できるようにする
+  // 現実的 / 理想的 の2モードで、それぞれ4つのトピックを編集できるようにする
   const [mode, setMode] = useState<"real" | "ideal">("real");
   const topics = [
     { key: "intro", label: "自己紹介" },
@@ -51,6 +32,60 @@ export default function Home() {
 
   const [coachQuestion, setCoachQuestion] = useState("consistency");
 
+  // ── ここから：録音中の表情記録（笑顔スコア）まわり ──
+  const [smileScore, setSmileScore] = useState(0);
+  // 録音中に集計した「録音中だけの」平均笑顔率（録音していなければ null）
+  const [recordedSmileAvg, setRecordedSmileAvg] = useState<number | null>(null);
+  const isRecordingRef = useRef(false);
+  const smileSamplesRef = useRef<number[]>([]);
+
+  // 笑顔率(数字)を受け取って、絵文字を返す
+  // 三項演算子(条件 ? Aの場合 : Bの場合)を2つ組み合わせて、3段階に出し分けている
+  function smileEmoji(n: number) {
+    return n >= 70 ? "😄" : n >= 40 ? "🙂" : "😐";
+  }
+
+  // 同じ考え方で、文字の色も3段階に出し分ける
+  function smileColor(n: number) {
+    return n >= 70 ? "green" : n >= 40 ? "orange" : "red";
+  }
+
+  // FaceMeter から0.5秒ごとに呼ばれる。常に表示用の smileScore を更新しつつ、
+  // 録音中であればサンプルとして貯めておく。
+  function handleScore(n: number) {
+    setSmileScore(n);
+    if (isRecordingRef.current) {
+      smileSamplesRef.current.push(n);
+    }
+  }
+
+  // Recorder から録音の開始/終了が通知されたときの処理
+  function handleRecordingChange(isRecording: boolean) {
+    isRecordingRef.current = isRecording;
+    if (isRecording) {
+      smileSamplesRef.current = [];
+      setRecordedSmileAvg(null);
+    } else {
+      const samples = smileSamplesRef.current;
+      if (samples.length > 0) {
+        const avg = Math.round(samples.reduce((a, b) => a + b, 0) / samples.length);
+        setRecordedSmileAvg(avg);
+      }
+    }
+  }
+
+  // ── ここから：録音の文字起こし先（4つのカードのうち、どこに入れるか） ──
+  // 直近でフォーカス（クリック）したカードのキーを覚えておき、
+  // Recorder から届いた文字起こし結果は、そのカードに書き込む
+  const [activeField, setActiveField] = useState<keyof typeof answers.real>("intro");
+
+  function handleRecordedText(t: string) {
+    setAnswers((prev) => ({
+      ...prev,
+      [mode]: { ...prev[mode], [activeField]: t },
+    }));
+  }
+
   async function handleSubmit() {
     setLoading(true);
     setFeedback("");
@@ -58,10 +93,11 @@ export default function Home() {
     // 自分のAPI(/api/coach)を呼ぶ（Groqのキーはこの先＝サーバー側にある）
     // 通信やAPI側の失敗で画面が無反応にならないよう try/catch/finally で確認
     try {
+      const scoreToSend = recordedSmileAvg ?? smileScore;
       const res = await fetch("/api/coach", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tone, mode, answers, coachQuestion }),
+        body: JSON.stringify({ tone, mode, answers, coachQuestion, smileScore: scoreToSend }),
       });
       const data = await res.json();
       setFeedback(data.feedback ?? "エラーが起きました。もう一度お試しください。");
@@ -73,23 +109,12 @@ export default function Home() {
   }
 
   // AIの返答に含まれる Markdown 記号（*, **）を、実際の太字表示に変換するための小さなヘルパー
-  // 例1: "とても**良い**です"   → "とても" + <strong>良い</strong> + "です"
-  // 例2: "* 良い点があります"   → "良い点があります"（箇条書きの * を太字に変換）
-  // 例3: "*良い*です"          → "良い" + <strong>良い</strong> + "です"
   function renderFeedback(text: string) {
-    // ① 行の先頭にある「* 」（箇条書き記号）は、太字の見出しっぽく変換する
-    //    例: "* 良い点" → "**良い点**"
     const withBulletsBolded = text.replace(/^\*\s+(.+)$/gm, "**$1**");
-
-    // ② "**text**"（太字）と "*text*"（強調）をまとめて太字に変換する
-    //    (\*\*(.+?)\*\*|\*(.+?)\*) の意味：
-    //    - \*\*(.+?)\*\* → ** で囲まれた部分
-    //    - \*(.+?)\*     → * だけで囲まれた部分
     const parts = withBulletsBolded.split(/\*\*(.+?)\*\*|\*(.+?)\*/g);
 
     return parts.map((part, i) => {
-      if (!part) return null; // split で空文字が混ざることがあるので無視する
-      // split の仕組み上、太字にしたい部分は3つおき（1, 2, 4, 5, 7, 8...）に入ってくる
+      if (!part) return null;
       const isBold = i % 3 !== 0;
       return isBold ? <strong key={i}>{part}</strong> : <span key={i}>{part}</span>;
     });
@@ -98,6 +123,17 @@ export default function Home() {
   return (
     <main className="container">
       <h1 className="title">AI練習コーチ</h1>
+
+      {/* カメラで表情（笑顔率）を計測。録音中の平均も算出して見せる */}
+      <FaceMeter onScore={handleScore} />
+      <p style={{ color: smileColor(smileScore) }}>いまの笑顔率：{smileScore}% {smileEmoji(smileScore)}</p>
+      {recordedSmileAvg !== null && (
+        <p style={{ color: smileColor(recordedSmileAvg) }}>録音中の平均笑顔率：{recordedSmileAvg}% {smileEmoji(recordedSmileAvg)}</p>
+      )}
+
+      {/* 録音した内容は、直近でフォーカスしたカードに書き込まれる */}
+      <p className="field-label">🎤 話した内容は「{topics.find((t) => t.key === activeField)?.label}」の欄に反映されます</p>
+      <Recorder onText={handleRecordedText} onRecordingChange={handleRecordingChange} />
 
       {/* モード切替 */}
       <div className="mode-switch">
@@ -124,6 +160,7 @@ export default function Home() {
               rows={6}
               className="textarea"
               value={answers[mode][t.key as keyof typeof answers.real]}
+              onFocus={() => setActiveField(t.key as keyof typeof answers.real)}
               onChange={(e) =>
                 setAnswers((prev) => ({
                   ...prev,

@@ -28,7 +28,8 @@ body {
   /* ふんわりしたグラデーションの背景。エントリーシート用紙が浮かんでいるイメージ */
   background: linear-gradient(160deg, var(--background) 0%, #eef3ea 100%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Sawarabi Gothic を優先し、対応していない文字だけ通常のフォントで表示する */
+  font-family: var(--font-sawarabi-gothic), Arial, Helvetica, sans-serif;
   min-height: 100vh;
 }
 
@@ -109,5 +110,88 @@ body {
 
   .feedback-body {
     @apply whitespace-pre-wrap text-sm leading-relaxed text-[var(--foreground)];
+  }
+
+  /* ── ここから：キャリア対話サービス用のクラス ── */
+
+  .character-grid {
+    @apply mt-6 grid grid-cols-1 sm:grid-cols-3 gap-5;
+  }
+
+  .character-card {
+    /* 選択できるキャラクターカード。押しやすい・触れたくなるやわらかい印象 */
+    @apply border-2 border-[var(--accent-soft)] rounded-3xl p-6 bg-white shadow-sm text-center cursor-pointer transition hover:shadow-md hover:-translate-y-1;
+  }
+
+  .character-card-selected {
+    @apply border-[var(--accent)] bg-[var(--accent-soft)];
+  }
+
+  .character-emoji {
+    @apply text-5xl block mb-3;
+  }
+
+  .character-name {
+    @apply font-bold text-[var(--accent-dark)] mb-1;
+  }
+
+  .character-desc {
+    @apply text-sm text-[var(--foreground)]/80;
+  }
+
+  .lead-text {
+    @apply text-sm leading-relaxed text-[var(--foreground)]/80 mt-2 whitespace-pre-wrap;
+  }
+
+  /* 右上に固定表示するキャラクター */
+  .character-fixed {
+    @apply fixed top-5 right-5 z-50 flex flex-col items-center;
+  }
+
+  .character-fixed-emoji {
+    @apply text-4xl w-16 h-16 flex items-center justify-center rounded-full bg-white border-2 border-[var(--accent)] shadow-md;
+  }
+
+  .character-fixed-name {
+    @apply mt-1 text-xs font-semibold text-[var(--accent-dark)] bg-white/80 px-2 py-0.5 rounded-full;
+  }
+
+  /* 読み上げのON/OFFボタン（右上のキャラクターの下に小さく表示） */
+  .character-fixed-mute {
+    @apply mt-1.5 text-sm w-8 h-8 flex items-center justify-center rounded-full bg-white border border-[var(--accent-soft)] shadow-sm transition hover:bg-[var(--accent-soft)] cursor-pointer;
+  }
+
+  /* キャラクターがしゃべっている吹き出し */
+  .speech-bubble {
+    @apply relative mt-5 border-2 border-[var(--accent)] rounded-2xl p-5 bg-white shadow-md;
+  }
+
+  .speech-bubble::after {
+    content: "";
+    @apply absolute -top-3 right-8 w-0 h-0;
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-bottom: 12px solid var(--accent);
+  }
+
+  .speech-bubble-text {
+    @apply text-base leading-relaxed text-[var(--foreground)] font-medium;
+  }
+
+  /* 対話中に「これまでの回答」を一覧で見せるパネル */
+  .answers-panel {
+    @apply mt-5 border border-[var(--accent-soft)] rounded-2xl p-4 bg-[#f6faf4];
+  }
+
+  .answers-panel-title {
+    @apply font-semibold text-[var(--accent-dark)] mb-2 text-sm;
+  }
+
+  .answers-panel-item {
+    @apply text-sm text-[var(--foreground)]/90 mb-1.5 pb-1.5 border-b border-[var(--accent-soft)]/60 last:border-0;
+  }
+
+  .answers-panel-label {
+    @apply font-semibold text-[var(--accent-dark)] mr-1;
   }
 }
