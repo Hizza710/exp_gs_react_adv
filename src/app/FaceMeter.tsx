@@ -1,7 +1,7 @@
 "use client";
 // src/app/FaceMeter.tsx
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 // ⚠️ face-api はブラウザ専用のライブラリなので、
 // ファイルの一番上で普通に import すると、サーバー側でも評価されてしまいエラーになる。
 // そのため、実際に使うタイミング（useEffectの中＝ブラウザ内）で動的に読み込む。
@@ -9,10 +9,20 @@ import { useEffect, useRef, useState } from "react";
 
 export default function FaceMeter({ onScore }: { onScore: (n: number) => void }) {
     const videoRef = useRef<HTMLVideoElement>(null);
-    const [smile, setSmile] = useState(0);
+
+    // onScore は親が再レンダリングされるたびに新しい関数になる。
+    // useEffect の依存配列に入れるとカメラが再起動してしまうので、
+    // 「最新の関数を入れておく箱」を ref で持ち、呼ぶときに中身を取り出す。
+    // こうすると依存配列を空にしても、古い関数を掴み続ける心配がない。
+    // ※ ref の書き換えはレンダー中にやると React に怒られる（描画の途中で値が変わるため）。
+    //    レンダーが終わったあとに走る useEffect の中で入れ替える。
+    const onScoreRef = useRef(onScore);
+    useEffect(() => {
+        onScoreRef.current = onScore;
+    });
 
     useEffect(() => {
-        let timer: ReturnType<typeof setInterval>;
+        let timer: ReturnType<typeof setTimeout> | undefined;
         let stream: MediaStream | null = null;
         // 開発モードでは useEffect が「実行→片付け→再実行」と2回走ることがある。
         // 片付け（cleanup）が先に呼ばれていたら、以降の処理を中断するための目印。
@@ -47,70 +57,46 @@ export default function FaceMeter({ onScore }: { onScore: (n: number) => void })
                 return;
             }
 
+            // play() を待っている間に片付けが呼ばれていたら、
+            // ここで止めないと「誰も止められない測定ループ」が生まれてしまう。
+            if (cancelled) return;
+
             // ③ 0.5秒ごとに表情を測る
-            timer = setInterval(async () => {
-                if (!videoRef.current) return;
-                const result = await faceapi
-                    .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-                    .withFaceExpressions();
-                if (result) {
-                    const happy = Math.round(result.expressions.happy * 100);
-                    setSmile(happy);
-                    onScore(happy); // 親(page.tsx)にも笑顔率を渡す
+            // setInterval だと、検出に0.5秒以上かかったとき処理が積み上がってしまう。
+            // 「1回終わってから次を予約する」形にすれば、必ず1回ずつ順番に実行される。
+            async function measure() {
+                if (cancelled || !videoRef.current) return;
+                try {
+                    const result = await faceapi
+                        .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+                        .withFaceExpressions();
+                    if (cancelled) return;
+                    if (result) {
+                        const happy = Math.round(result.expressions.happy * 100);
+                        onScoreRef.current(happy); // 親(page.tsx)にも笑顔率を渡す
+                    }
+                } catch (e) {
+                    console.error(e);
                 }
-            }, 500);
+                if (!cancelled) timer = setTimeout(measure, 500); // 次の1回を予約
+            }
+            measure();
         }
 
-        start();
+        // モデル読み込みなどの失敗を拾えるようにしておく（放置すると未処理エラーになる）
+        start().catch((e) => console.error(e));
+
         return () => {
-            // 片付け：これから走る予定の処理を中断させ、タイマーとカメラを止める
             cancelled = true;
-            clearInterval(timer);
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
-            }
+            clearTimeout(timer);
+            stream?.getTracks().forEach((track) => track.stop());
         };
-        // onScore は常に setSmileScore を渡す（インライン関数にすると毎回カメラが再起動するので注意）
-    }, []);
+    }, []); // カメラはマウント時だけ起動する（onScore は ref 経由なので依存不要）
 
     return (
-        <div>
-            {/*
-              円形の窓（マスク）を作る仕組み：
-              ① 外側の div を「幅と高さが同じ正方形」にして、border-radius: 50% で丸くする
-                 → overflow: hidden をつけることで、丸からはみ出た部分を切り取って隠す
-                 → position: relative にして、中の video の位置の基準にする
-              ② 中の video は「サイズを固定（160×160）」して、position: absolute + 中央寄せで配置する
-                 → こうすることで、外側の丸窓(div)だけを小さくしても、
-                    video 自体の大きさ（＝顔の実際の見え方）は変わらず、
-                    「窓を小さくして覗き見ている」ような見た目になる
-                    （もし video も一緒に縮めると、顔まで一緒に小さくなってしまう）
-            */}
-            <div
-                style={{
-                    width: 200,
-                    height: 200,
-                    borderRadius: "50%",
-                    overflow: "hidden",
-                    position: "relative",
-                }}
-            >
-                <video
-                    ref={videoRef}
-                    autoPlay
-                    muted
-                    style={{
-                        width: 300,
-                        height: 300,
-                        objectFit: "cover",
-                        position: "absolute",
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                    }}
-                />
-            </div>
-            <p>😊 笑顔 {smile}%</p>
+        <div className="camera-frame">
+            <video ref={videoRef} autoPlay muted playsInline aria-label="表情確認用のカメラ映像" />
+            <span className="camera-caption">YOUR PORTRAIT</span>
         </div>
     );
 }

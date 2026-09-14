@@ -1,0 +1,17 @@
+{
+  "_comment": [
+    "【秘密の鍵をAIに読ませないための設定】",
+    "AI（Claude Code）が読んだファイルの中身は、処理のためAnthropicのサーバーに送られる。",
+    ".env.local には CLERK_SECRET_KEY や RESEND_API_KEY など、なりすましに使える鍵が入っているので、AIが読めないようにする。",
+    "・./.env*    … プロジェクト直下の .env / .env.local など",
+    "・**/.env*   … サブフォルダ内の .env 系ファイルも含めてすべて",
+    "注意: 止められるのはファイルの読み込みだけ。env / printenv や、鍵を console.log するコードの実行結果はAIに見えるので、そういう操作はさせないこと。",
+    "万一鍵をAIやチャットに見せてしまったら、Clerk / Resend の管理画面ですぐに鍵を作り直す。"
+  ],
+  "permissions": {
+    "deny": [
+      "Read(./.env*)",
+      "Read(**/.env*)"
+    ]
+  }
+}
