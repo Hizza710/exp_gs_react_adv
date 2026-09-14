@@ -1,7 +1,8 @@
 // app/history/[id]/page.tsx
-import { db, CURRENT_USER_ID } from "@/db";
+import { db } from "@/db";
 import { sessions } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
+import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import FeedbackText from "../../FeedbackText";
 
@@ -10,11 +11,16 @@ export default async function HistoryDetail({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  // 一覧と同じく、未ログインなら中身を見せない
+  const { userId } = await auth();
+  if (!userId) return <main className="studio-shell history-intro"><h1>履歴を見るにはログインしてください。</h1><Link className="studio-button" href="/history">← 練習の記録へ</Link></main>;
+
   const { id } = await params;
   // 数字でないIDは Number() で NaN になり、そのまま SQL に渡すとエラーになる。
   const sessionId = Number(id);
+  // 「そのIDである」だけでなく「ログイン中の本人のものである」ことも条件にする。
   const row = Number.isInteger(sessionId)
-    ? (await db.select().from(sessions).where(and(eq(sessions.id, sessionId), eq(sessions.userId, CURRENT_USER_ID))))[0]
+    ? (await db.select().from(sessions).where(and(eq(sessions.id, sessionId), eq(sessions.userId, userId))))[0]
     : undefined;
 
   if (!row) return <main className="studio-shell history-intro"><h1>記録が見つかりませんでした。</h1><Link className="studio-button" href="/history">← 練習の記録へ</Link></main>;

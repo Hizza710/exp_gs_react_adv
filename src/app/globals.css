@@ -445,6 +445,20 @@ body { background: radial-gradient(ellipse at 95% 10%, #e9dec9 0, transparent 42
 .mailbox-submit:disabled { opacity: .45; cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) { .mailbox-submit { transition: none; } }
 
+/* フィードバック後の「保存・メール・記録」を、同じ大きさの丸アイコンで右下に並べる。 */
+.coach-icon-actions { display: flex; justify-content: flex-end; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.coach-icon { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 96px; padding: 0; border: 0; background: none; color: var(--studio-ink); font-size: 11px; line-height: 1.4; text-align: center; text-decoration: none; cursor: pointer; }
+.coach-icon-circle { display: grid; place-items: center; width: 56px; height: 56px; border: 1px solid #d7b9a7; border-radius: 50%; background: #f6e9dc; color: var(--studio-rust); transition: background .2s, color .2s, transform .2s; }
+.coach-icon-circle svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.coach-icon:hover:not(:disabled) .coach-icon-circle { background: #ecd7c3; transform: translateY(-1px); }
+.coach-icon:focus-visible { outline: none; }
+.coach-icon:focus-visible .coach-icon-circle { outline: 2px solid var(--studio-rust); outline-offset: 3px; }
+.coach-icon:disabled { opacity: .45; cursor: not-allowed; }
+.coach-icon.is-done .coach-icon-circle { border-color: var(--studio-rust); }
+.coach-icon.is-active .coach-icon-circle { background: var(--studio-rust); border-color: var(--studio-rust); color: #fffdf5; }
+.coach-icon.is-active:hover .coach-icon-circle { background: #833b28; }
+@media (prefers-reduced-motion: reduce) { .coach-icon-circle { transition: none; } }
+
 /* ヘッダー・本文・フッターの左右端を揃える。 */
 .site-footer { width: min(1180px, calc(100% - 80px)); margin: auto auto 0; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; padding: 10px 0; min-height: 36px; flex-shrink: 0; }
 .site-footer .copyright { text-align: center; white-space: nowrap; }
