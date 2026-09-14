@@ -1,4 +1,5 @@
 // src/app/api/coach/route.ts
+import { auth } from "@clerk/nextjs/server";
 
 // 入力の上限（超えた分は AI に送らず、400 で返す）
 // 画面側の想定：お題は1行、回答は1分ぶんの話し言葉、振り返りは数行。
@@ -24,6 +25,10 @@ function checkText(value: unknown, label: string, max: number) {
 }
 
 export async function POST(request: Request) {
+  // ⓪ ログインしていない人には AI を使わせない（APIキーの利用枠を守る）
+  const { userId } = await auth();
+  if (!userId) return Response.json({ feedback: "ログインしてください" }, { status: 401 });
+
   // ① 入力を受け取る（画面から送られてくる お題 と 回答）
   //   Body が空/JSONでない時に備えて、try で受け止める
   let body;

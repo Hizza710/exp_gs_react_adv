@@ -1,11 +1,16 @@
 // src/app/api/tts/route.ts
 import { EdgeTTS } from "@andresaya/edge-tts";
+import { auth } from "@clerk/nextjs/server";
 
 // 読み上げる文字数の上限。長すぎる文章は合成に時間がかかり、
 // base64 の応答も巨大になるため、ここで止める。
 const MAX_TEXT_LENGTH = 3000;
 
 export async function POST(request: Request) {
+  // ログインしていない人には読み上げを使わせない
+  const { userId } = await auth();
+  if (!userId) return Response.json({ error: "ログインしてください" }, { status: 401 });
+
   let body;
   try {
     body = await request.json();

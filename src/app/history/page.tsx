@@ -3,23 +3,15 @@ import { db } from "@/db";
 import { sessions } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
-import { SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
 import DeletePracticeButton from "./DeletePracticeButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function HistoryPage() {
-    // まず未ログインを弾く（他のAPIと同じ思想＝ログインしていない人は入れない）
-    const { userId } = await auth();
-    if (!userId) {
-        return (
-            <main className="studio-shell history-dashboard">
-                <header className="history-intro"><Link className="muted-copy" href="/">← 練習に戻る</Link><p className="eyebrow" style={{ marginTop: 24 }}>THE PRACTICE COLLECTION</p><h1>履歴を見るにはログインしてください。</h1><p className="intro-copy">ログインすると、あなたが保存した練習の記録だけが表示されます。</p></header>
-                <SignInButton><button className="studio-button primary-button">ログインする</button></SignInButton>
-            </main>
-        );
-    }
+    // 未ログインは src/proxy.ts でログイン画面へ送られる。
+    // 念のためここでも protect() で確かめ、ログイン中のユーザーIDを受け取る。
+    const { userId } = await auth.protect();
 
     // 削除APIと同じ条件（ログイン中のユーザー自身のレコードだけ）で一覧する。
     // ここを揃えておかないと、「一覧には出るのに削除できない」記録が生まれてしまう。

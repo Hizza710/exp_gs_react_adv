@@ -4,7 +4,6 @@
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import Recorder from "./Recorder";
 import FeedbackText from "./FeedbackText";
 
@@ -248,34 +247,28 @@ export default function Home() {
         <h2 id="review-title">回答と振り返りから、次の一歩へ。</h2>
         {feedback ? <div className="review-grid">
           <div><p className="input-label">コーチからのフィードバック</p><p className="feedback-copy"><FeedbackText text={feedback} /></p><div className="studio-actions"><button className="studio-button" onClick={speak} disabled={speaking}>{speaking ? "🔊 読み上げ中…" : "🔊 読み上げ"}</button><button className="studio-button" onClick={stopSpeaking} disabled={!speaking} aria-label="読み上げを停止">⏹ 停止</button></div></div>
-          {/* 保存とメールは「ログイン中だけ」表示する */}
+          {/* このページはログインした人しか開けない（src/proxy.ts）ので、ここは常に表示してよい */}
           <div>
-            <SignedIn>
-              {/* 保存・メール・記録の3つを、同じ大きさの丸アイコンで右下に並べる。
-                  保存したら「記録を見る」を塗りつぶして、見に行けることを伝える */}
-              <div className="coach-icon-actions">
-                <button type="button" className={`coach-icon${saved ? " is-done" : ""}`} onClick={save} disabled={saving}>
-                  <span className="coach-icon-circle">
-                    {saved
-                      ? <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
-                      : <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 3h11l3 3v15H5z" /><path d="M8 3v5h7V3M8 21v-7h8v7" /></svg>}
-                  </span>
-                  <span>{saving ? "保存中…" : saved ? "保存しました" : "練習を保存する"}</span>
-                </button>
-                <button type="button" className="coach-icon" onClick={deliver} disabled={delivering}>
-                  <span className="coach-icon-circle"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18v12H3z" /><path d="M3 7l9 7 9-7" /></svg></span>
-                  <span>{delivering ? "送信中…" : "メールで受け取る"}</span>
-                </button>
-                <Link className={`coach-icon${saved ? " is-active" : ""}`} href="/history">
-                  <span className="coach-icon-circle"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5C6.5 4 9.5 4 12 6c2.5-2 5.5-2 8-.5V19c-2.5-1.5-5.5-1.5-8 .5-2.5-2-5.5-2-8-.5z" /><path d="M12 6v13.5" /></svg></span>
-                  <span>練習の記録を見る</span>
-                </Link>
-              </div>
-            </SignedIn>
-            <SignedOut>
-              <p className="muted-copy">練習を保存・メールで受け取るには、ログインしてください。</p>
-              <SignInButton><button className="studio-button primary-button">ログインする</button></SignInButton>
-            </SignedOut>
+            {/* 保存・メール・記録の3つを、同じ大きさの丸アイコンで右下に並べる。
+                保存したら「記録を見る」を塗りつぶして、見に行けることを伝える */}
+            <div className="coach-icon-actions">
+              <button type="button" className={`coach-icon${saved ? " is-done" : ""}`} onClick={save} disabled={saving}>
+                <span className="coach-icon-circle">
+                  {saved
+                    ? <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
+                    : <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 3h11l3 3v15H5z" /><path d="M8 3v5h7V3M8 21v-7h8v7" /></svg>}
+                </span>
+                <span>{saving ? "保存中…" : saved ? "保存しました" : "練習を保存する"}</span>
+              </button>
+              <button type="button" className="coach-icon" onClick={deliver} disabled={delivering}>
+                <span className="coach-icon-circle"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18v12H3z" /><path d="M3 7l9 7 9-7" /></svg></span>
+                <span>{delivering ? "送信中…" : "メールで受け取る"}</span>
+              </button>
+              <Link className={`coach-icon${saved ? " is-active" : ""}`} href="/history">
+                <span className="coach-icon-circle"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5C6.5 4 9.5 4 12 6c2.5-2 5.5-2 8-.5V19c-2.5-1.5-5.5-1.5-8 .5-2.5-2-5.5-2-8-.5z" /><path d="M12 6v13.5" /></svg></span>
+                <span>練習の記録を見る</span>
+              </Link>
+            </div>
           </div>
         </div> : <p className="review-empty">{loading ? "コーチがあなたの回答を読んでいます。少しお待ちください。" : "回答と振り返りを送ると、両方を踏まえたフィードバックが届きます。"}</p>}
       </section>

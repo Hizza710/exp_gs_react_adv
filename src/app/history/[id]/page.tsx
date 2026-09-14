@@ -11,9 +11,8 @@ export default async function HistoryDetail({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  // 一覧と同じく、未ログインなら中身を見せない
-  const { userId } = await auth();
-  if (!userId) return <main className="studio-shell history-intro"><h1>履歴を見るにはログインしてください。</h1><Link className="studio-button" href="/history">← 練習の記録へ</Link></main>;
+  // 一覧と同じく、ログイン中のユーザーIDを受け取る（未ログインは src/proxy.ts でログイン画面へ）
+  const { userId } = await auth.protect();
 
   const { id } = await params;
   // 数字でないIDは Number() で NaN になり、そのまま SQL に渡すとエラーになる。

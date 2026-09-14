@@ -1,10 +1,15 @@
 // src/app/api/transcribe/route.ts
+import { auth } from "@clerk/nextjs/server";
 
 // 送られてくる音声の上限（1分の録音はおよそ 1MB 前後）。
 // 上限を決めておかないと、巨大なファイルをそのまま外部APIに転送してしまう。
 const MAX_AUDIO_BYTES = 10 * 1024 * 1024; // 10MB
 
 export async function POST(request: Request) {
+  // ログインしていない人の音声は、外部API（Groq）に送らない
+  const { userId } = await auth();
+  if (!userId) return Response.json({ error: "ログインしてください" }, { status: 401 });
+
   // 画面から送られた音声ファイルを受け取る
   const inForm = await request.formData();
   const audio = inForm.get("audio");

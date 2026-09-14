@@ -205,6 +205,8 @@ body { background: radial-gradient(ellipse at 95% 10%, #e9dec9 0, transparent 42
 .nav-links { display: flex; gap: 28px; font-size: 12px; }
 .nav-links a { padding: 8px 0; border-bottom: 1px solid transparent; }
 .nav-links a:hover { border-color: var(--studio-rust); color: var(--studio-rust); }
+/* ナビのリンクとアカウントアイコン（Clerk の UserButton）を同じ高さにそろえる */
+.nav-links { align-items: center; }
 .studio-shell { width: min(1180px, calc(100% - 80px)); margin: 0 auto; }
 .studio-intro { display: flex; align-items: center; justify-content: space-between; gap: 32px; padding: 50px 0 42px; }
 .eyebrow { font-family: var(--font-geist-sans), sans-serif; color: var(--studio-rust); font-size: 10px; letter-spacing: .18em; font-weight: 600; }
@@ -444,6 +446,9 @@ body { background: radial-gradient(ellipse at 95% 10%, #e9dec9 0, transparent 42
 .mailbox-submit:hover:not(:disabled) { background: #ecd7c3; }
 .mailbox-submit:disabled { opacity: .45; cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) { .mailbox-submit { transition: none; } }
+
+/* ログイン・新規登録画面：説明文の下に Clerk のフォームを中央寄せで置く。 */
+.auth-page { display: flex; flex-direction: column; align-items: center; padding-bottom: 48px; text-align: center; }
 
 /* フィードバック後の「保存・メール・記録」を、同じ大きさの丸アイコンで右下に並べる。 */
 .coach-icon-actions { display: flex; justify-content: flex-end; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
